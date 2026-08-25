@@ -1,10 +1,9 @@
-'''Base service class that provides common CRUD operations in services'''
+'''Base service class that provides common CRUD operations in services (NFR-005, NFR-006, NFR-009)'''
 
+from abc import ABC
 from factories.base_factory import BaseFactory
 from models.base_entity_model import BaseEntityModel
 from repository.base_repo import BaseRepository
-
-from abc import ABC
 
 # mvc (controller/service)
 
@@ -15,9 +14,9 @@ class BaseService(ABC):
 
     def add(self, entity_data: BaseEntityModel, entity_name: str):
         '''Adds an entity to the database'''
-        exists = self.repo.get(entity_data.entity_id)
+        exists = self.repo.exists(entity_data.entity_id)
         if exists:
-            return {"error": f"{entity_name} already exists. {exists}"}
+            return {"error": f"{entity_name} with ID {entity_data.entity_id} already exists."}
         else:
             try:
                 new_entity = self.factory.create(entity_data)
@@ -49,7 +48,6 @@ class BaseService(ABC):
             except Exception as e:
                 return {"error": f"Connection error or update error: {e}"}
 
-
     def delete(self, entity_id: int, entity_name: str):
         '''Deletes an entity from the database'''
         exists = self.repo.get(entity_id)
@@ -62,12 +60,10 @@ class BaseService(ABC):
             except Exception as e:
                 return {"error": f"Connection error or delete error: {e}"}
 
-
-    def get_all(self):
-        '''Gets all the entities from the database; early development for
-        retrieval testing purposes'''
+    def get_all(self, skip: int = 0, limit: int = 100):
+        '''Gets entities from the database with pagination (NFR-006)'''
         try:
-            retrieved_entities_cursor = self.repo.get_all()
+            retrieved_entities_cursor = self.repo.get_all(skip=skip, limit=limit)
             entities = list(retrieved_entities_cursor)
             return entities
         except Exception as e:

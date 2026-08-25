@@ -44,11 +44,10 @@ class BaseRouter(ABC):
             raise HTTPException(status_code=404, detail=result["error"])
         return result
 
-    async def get_all(self):
-        '''Gets all entities from the database; early development for
-        retrieval testing purposes'''
-        result = self.service.get_all()
+    async def get_all(self, skip: int = 0, limit: int = 100):
+        '''Gets all entities from the database with pagination (NFR-006)'''
+        result = self.service.get_all(skip=skip, limit=limit)
 
-        if "error" in result:
+        if isinstance(result, dict) and "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
         return result

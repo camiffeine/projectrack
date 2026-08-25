@@ -2,17 +2,11 @@
 
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-import os
-from dotenv import load_dotenv
+from config import settings
 
-# Sets up the Token
-load_dotenv()
-SECRET_KEY = os.getenv("SECRET_KEY", "default-insecure-dev-secret-key-change-in-production")
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY environment variable is not set.")
-
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 def create_access_token(data: dict):
     '''Creates the access token with expiration and issued-at timestamp'''
