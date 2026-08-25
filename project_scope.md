@@ -1,7 +1,3 @@
-
-
-<!-- Start of picture text -->
-
 # Part 2: Requirements Elicitation
 
 ## a) Initial Requirements Elicitation
@@ -52,65 +48,61 @@ Organizing, breaking down, and consolidating the requirements and processes iden
 
 ### Functional Requirements (FR):
 
-***Priority associated before performing the MoSCoW classification**
+**\*Priority associated before performing the MoSCoW classification**
 
-| **ID** | User (comment): Feature                                                                                                                           | Associated Process | **Priority*** |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------- |
-| FR-001 | User (anyone): The User registers in the Application with their information – registration does not grant a role by default.                      | User Management    | High          |
-| FR-002 | User (anyone): Log in to the Application with their registered data.                                                                              | User Management    | High          |
-| FR-003 | Administrator: Assign Student or Professor roles to the User                                                                                      | User Management    | High          |
-| FR-004 | Professor: Create groups (classes) and assign students to these groups for the monitoring or delivery of their projects.                          | User Management    | High          |
-| FR-005 | Professor: Create projects (see: tasks or assignments) for a group (class). Include information such as title, description, due date, and status. | Task Management    | High          |
-| FR-006 | Professor: Assign projects to specific student(s) in the course in question.                                                                      | Task Management    | Medium        |
-| FR-007 | Professor: Update the status of a project according to the progress of the tasks (intermediate deliveries registered).                            | Task Management    | Low           |
-| FR-008 | Student: Check the status of an assigned project and its corresponding information.                                                               | Task Management    | High          |
-| FR-009 | Student: Register or submit progress (e.g., midterm delivery) on each assigned project, as required.                                              | Task Management    | Medium        |
-| FR-010 | Student: Submit a final delivery for an assigned project.                                                                                         | Task Management    | High          |
-| FR-011 | Professor: Provide feedback on project submissions made by assigned students; it is given to them.                                                | Task Management    | Medium        |
-| FR-012 | Student: Upload files or links relevant to assigned project deliveries.                                                                           | Attachments        | High          |
-| FR-013 | Professor: Upload files or links for each project (e.g., guides or materials).                                                                    | Attachments        | High          |
-| FR-014 | User (anyone): Upload a profile picture or icon associated with the user in question.                                                             | Attachments        | Low           |
-| FR-015 | User (anyone): Check previous progress of assigned activities.                                                                                    | Activity Log       | Low           |
-| FR-016 | Student: Check the assigned projects and their identifier.                                                                                        | Task Management    | High          |
-
-
+| **ID** | User (comment): Feature                                                                                                                           | Associated Process | **Priority\*** |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | -------------- |
+| FR-001 | User (anyone): The User registers in the Application with their information – registration does not grant a role by default.                      | User Management    | High           |
+| FR-002 | User (anyone): Log in to the Application with their registered data.                                                                              | User Management    | High           |
+| FR-003 | Administrator: Assign Student or Professor roles to the User                                                                                      | User Management    | High           |
+| FR-004 | Professor: Create groups (classes) and assign students to these groups for the monitoring or delivery of their projects.                          | User Management    | High           |
+| FR-005 | Professor: Create projects (see: tasks or assignments) for a group (class). Include information such as title, description, due date, and status. | Task Management    | High           |
+| FR-006 | Professor: Assign projects to specific student(s) in the course in question.                                                                      | Task Management    | Medium         |
+| FR-007 | Professor: Update the status of a project according to the progress of the tasks (intermediate deliveries registered).                            | Task Management    | Low            |
+| FR-008 | Student: Check the status of an assigned project and its corresponding information.                                                               | Task Management    | High           |
+| FR-009 | Student: Register or submit progress (e.g., midterm delivery) on each assigned project, as required.                                              | Task Management    | Medium         |
+| FR-010 | Student: Submit a final delivery for an assigned project.                                                                                         | Task Management    | High           |
+| FR-011 | Professor: Provide feedback on project submissions made by assigned students; it is given to them.                                                | Task Management    | Medium         |
+| FR-012 | Student: Upload files or links relevant to assigned project deliveries.                                                                           | Attachments        | High           |
+| FR-013 | Professor: Upload files or links for each project (e.g., guides or materials).                                                                    | Attachments        | High           |
+| FR-014 | User (anyone): Upload a profile picture or icon associated with the user in question.                                                             | Attachments        | Low            |
+| FR-015 | User (anyone): Check previous progress of assigned activities.                                                                                    | Activity Log       | Low            |
+| FR-016 | Student: Check the assigned projects and their identifier.                                                                                        | Task Management    | High           |
 
 ### Non-Functional Requirements (NFR):
 
-***Priority associated before performing the MoSCoW classification** 
+**\*Priority associated before performing the MoSCoW classification**
 
-| **ID**  | **User (comment): Feature**                                                                                                       | Associated Process          | **Priority*** |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------------- |
-| NFR-001 | The application must be compatible with mobile devices (smartphones, tablets) and desktop computers (PCs).                        | Accessibility and usability | High          |
-| NFR-002 | The application should be intuitive and easy to use.                                                                              | Accessibility and usability | High          |
-| NFR-003 | Ensure the protection of personal and/or sensitive data through encryption.                                                       | Security                    | High          |
-| NFR-004 | Use secure credentials to prevent security breaches or unauthorized role access.                                                  | Security                    | High          |
-| NFR-005 | The application takes less than 5 seconds on standard connection conditions.                                                      | Performance                 | High          |
-| NFR-006 | The application must support multiple users without compromising performance.                                                     | Performance                 | Medium        |
-| NFR-007 | The Application sends notifications to Users about important updates (e.g., new task, comments, changes in dates, delivery made). | Notifications               | Medium        |
-| NFR-008 | The Platform maintains an Activity Log for each project.                                                                          | Activity Log                | Low           |
-| NFR-009 | The site design should allow for the future integration of new functionalities without requiring a complete restructuring.        | Scalability                 | Medium        |
-| NFR-010 | Clean visual design, with clear typography.                                                                                       | Design                      | Medium        |
-| NFR-011 | Professional color palette. Eye-catching icons and buttons.                                                                       | Design                      | Medium        |
+| **ID**  | **User (comment): Feature**                                                                                                       | Associated Process          | **Priority\*** |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------- |
+| NFR-001 | The application must be compatible with mobile devices (smartphones, tablets) and desktop computers (PCs).                        | Accessibility and usability | High           |
+| NFR-002 | The application should be intuitive and easy to use.                                                                              | Accessibility and usability | High           |
+| NFR-003 | Ensure the protection of personal and/or sensitive data through encryption.                                                       | Security                    | High           |
+| NFR-004 | Use secure credentials to prevent security breaches or unauthorized role access.                                                  | Security                    | High           |
+| NFR-005 | The application takes less than 5 seconds on standard connection conditions.                                                      | Performance                 | High           |
+| NFR-006 | The application must support multiple users without compromising performance.                                                     | Performance                 | Medium         |
+| NFR-007 | The Application sends notifications to Users about important updates (e.g., new task, comments, changes in dates, delivery made). | Notifications               | Medium         |
+| NFR-008 | The Platform maintains an Activity Log for each project.                                                                          | Activity Log                | Low            |
+| NFR-009 | The site design should allow for the future integration of new functionalities without requiring a complete restructuring.        | Scalability                 | Medium         |
+| NFR-010 | Clean visual design, with clear typography.                                                                                       | Design                      | Medium         |
+| NFR-011 | Professional color palette. Eye-catching icons and buttons.                                                                       | Design                      | Medium         |
 
 ## **b) Associated Process identified**
 
-- For Functional Requirements (FR): 
-  
-  - User Management 
-  - Task Management 
+- For Functional Requirements (FR):
+  - User Management
+  - Task Management
   - Attachments
-  - Class management (optional) 
+  - Class management (optional)
 
-- For Non-Functional Requirements (NFR): 
-  
-  - Accessibility and usability 
-  - Security 
-  - Performance 
+- For Non-Functional Requirements (NFR):
+  - Accessibility and usability
+  - Security
+  - Performance
   - Notifications
-  - Activity Log 
-  - Scalability  
-  - Design 
+  - Activity Log
+  - Scalability
+  - Design
 
 ## **c) MoSCoW classification**
 
@@ -131,7 +123,7 @@ The prioritization carried out, both for Functional Requirements (FR) and for No
 | _NFR-004_         |                     |                    |                    |
 | _NFR-009_         |                     |                    |                    |
 
-Certain factors have been taken into account for the classification of functionalities and their effort estimation. 
+Certain factors have been taken into account for the classification of functionalities and their effort estimation.
 
 **Available resources:** A team of four university students will act as developers, software architects, UX designers, and testers. The following resources are available, though their limitations vary:
 
@@ -143,12 +135,10 @@ Certain factors have been taken into account for the classification of functiona
 **Technical complexity:** Given the project's characteristics and needs, as well as the available resources of the development team, three types of tasks have been identified, based on their implementation complexity, regardless of priority:
 
 - Basic Tasks (2 to 5 points)
-
 - Medium Tasks (5 to 8 points)
-
 - Complex Tasks (8 to 13 points)
 
-**Impact on user experience and relationship with project objectives:** Initially, the goal is to build an application capable of performing its core functionalities, prioritized as Must (and Should) in this initial module. Improvements to the user experience are a priority in subsequent functionalities, planned as Should, Could, and Won't. 
+**Impact on user experience and relationship with project objectives:** Initially, the goal is to build an application capable of performing its core functionalities, prioritized as Must (and Should) in this initial module. Improvements to the user experience are a priority in subsequent functionalities, planned as Should, Could, and Won't.
 
 ## **d) Project Scope**
 

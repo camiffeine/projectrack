@@ -12,6 +12,11 @@ class UserRepository(BaseRepository):
     def __init__(self):
         '''Initializes user's repository'''
         self.collection = get_db()["users"]  # References its respective collection
+        try:
+            # Ensure unique email index for data protection and fast lookup
+            self.collection.create_index("email", unique=True)
+        except Exception:
+            pass
 
     def add(self, user: UserModel):
         '''Adds a user to the database'''
@@ -26,6 +31,10 @@ class UserRepository(BaseRepository):
     def update(self, user_id: int, updates: dict):
         '''Updates a user in the database'''
         return super().update(user_id, updates)
+
+    def update_role(self, user_id: int, role_id: int):
+        '''Updates the role_id of a user in the database'''
+        return self.collection.update_one({"_id": user_id}, {"$set": {"role_id": role_id}})
 
     def delete(self, user_id: int):
         '''Deletes a user from the database'''
