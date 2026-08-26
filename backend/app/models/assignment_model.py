@@ -1,41 +1,41 @@
-'''Assignment model module with Pydantic validations'''
+'''Assignment model module with Pydantic validations (FR-005)'''
 
-from .base_entity_model import BaseEntityModel
-
-from pydantic import Field, model_validator
 from typing import Optional
 from datetime import datetime
+from pydantic import Field, model_validator
+from .base_entity_model import BaseEntityModel
 
-# mvc (model) and schemas (DTO, Data Transfer Object)
-# TODO: Separate the models from the schemas
+# mvc (model)
 
 class AssignmentModel(BaseEntityModel):
-    '''Assignment scheme with Pydantic validations'''
+    '''Assignment domain model with validations'''
     assignment_id: int = Field(
         ..., gt=0, description="Must be a positive integer."
     )
 
     title: str = Field(
-        ..., min_length=6, max_length=80, description="Assignment name must be between 3 and \
-            50 characters."
+        ..., min_length=3, max_length=80, description="Assignment title between 3 and 80 characters."
     )
 
     description: str = Field(
-        ..., max_length=350, description="Assignment description must have up to 350 characters."
+        ..., max_length=500, description="Assignment description up to 500 characters."
     )
 
     assignment_date: datetime = Field(
-        ..., default_factory=datetime.now, description="Assignment asignment date."
+        default_factory=datetime.now, description="Date when the assignment was issued."
     )
 
     deadline: Optional[datetime] = Field(
-        None, description="Assignment deadline date."
+        None, description="Assignment deadline timestamp."
     )
 
     class_id: int = Field(
-        ..., gt=0, description="Must be a positive integer."
+        ..., gt=0, description="Class ID this assignment belongs to."
     )
 
+    status: str = Field(
+        default="Active", description="Status: Active, Closed, Archived"
+    )
 
     # Pydantic model validator
     @model_validator(mode='before')

@@ -1,30 +1,84 @@
-'''Submission router with native FastAPI dependency injection (FR-010, FR-011, NFR-009)'''
+'''Submission router with student deliveries and professor feedback grading (FR-010, FR-011, FR-012, NFR-009)'''
 
 from fastapi import APIRouter, Depends, status
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from auth.auth_bearer import verify_auth, RoleRequired
 from models.submission_model import SubmissionModel
 from services.submission_service import SubmissionService
+from schemas.submission_schemas import SubmissionCreate, SubmissionFeedbackRequest, SubmissionResponse
 from dependencies import get_submission_service, PaginationParams
 
 router = APIRouter(tags=["Submissions"])
 
-@router.post("/submissions/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(1, 3))])
-async def add_submission(
-    submission: SubmissionModel,
+@router.post(
+    "/submissions/add/",
+    response_model=SubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleRequired(1, 3))],
+    summary="Submit a project deliverable (Students & Admins - FR-010, FR-012)"
+)
+@router.post(
+    "/submissions/",
+    response_model=SubmissionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(RoleRequired(1, 3))],
+    include_in_schema=False
+)
+async def submit_assignment(
+    submission: SubmissionCreate,
     service: SubmissionService = Depends(get_submission_service)
 ):
-    '''Add a project submission to the database (Students & Admins - FR-010)'''
-    return service.add(submission)
+    '''Submit a final or progress deliverable for an assigned project (FR-010, FR-012)'''
+    return service.submit_assignment(submission)
 
-@router.get("/submissions/get/{submission_id}", dependencies=[Depends(verify_auth)])
+@router.put(
+    "/submissions/{submission_id}/feedback",
+    response_model=SubmissionResponse,
+    dependencies=[Depends(RoleRequired(2, 3))],
+    summary="Provide professor feedback and grading on a submission (Professors & Admins - FR-011)"
+)
+async def provide_feedback(
+    submission_id: int,
+    feedback_data: SubmissionFeedbackRequest,
+    service: SubmissionService = Depends(get_submission_service)
+):
+    '''Professor review comments and grading evaluation for a student submission (FR-011)'''
+    return service.provide_feedback(
+        submission_id=submission_id,
+        feedback=feedback_data.feedback,
+        grade=feedback_data.grade
+    )
+
+@router.get(
+    "/submissions/get/{submission_id}",
+    response_model=SubmissionResponse,
+    dependencies=[Depends(verify_auth)]
+)
 async def get_submission(
     submission_id: int,
     service: SubmissionService = Depends(get_submission_service)
 ):
-    '''Get a submission from the database'''
+    '''Get a submission by ID from the database'''
     return service.get(submission_id)
+
+@router.get(
+    "/submissions/student/{student_id}",
+    response_model=List[SubmissionResponse],
+    dependencies=[Depends(verify_auth)],
+    summary="Get all submissions made by a student (FR-008)"
+)
+async def get_student_submissions(
+    student_id: int,
+    pagination: PaginationParams = Depends(),
+    service: SubmissionService = Depends(get_submission_service)
+):
+    '''Get all submissions made by a student with pagination'''
+    return service.get_submissions_by_student(
+        student_id=student_id,
+        skip=pagination.skip,
+        limit=pagination.limit
+    )
 
 @router.put("/submissions/update/{submission_id}", dependencies=[Depends(RoleRequired(1, 2, 3))])
 async def update_submission(
@@ -32,7 +86,7 @@ async def update_submission(
     updates: dict,
     service: SubmissionService = Depends(get_submission_service)
 ):
-    '''Update a submission / provide feedback in the database (FR-011)'''
+    '''Update a submission in the database'''
     return service.update(submission_id, updates)
 
 @router.delete("/submissions/delete/{submission_id}", dependencies=[Depends(RoleRequired(3))])

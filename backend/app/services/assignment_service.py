@@ -1,21 +1,34 @@
-'''Assignment service class with constructor dependency injection (NFR-009)'''
+'''Assignment service class with student assignment tracking and status aggregation (FR-005, FR-008, FR-016, NFR-009)'''
 
 from typing import Optional, Dict, Any, List
 from .base_service import BaseService
 from factories.assignment_factory import AssignmentFactory
 from models.assignment_model import AssignmentModel
 from repository.assignment_repo import AssignmentRepository
+from repository.student_repo import StudentRepository
+from repository.student_assignment_repo import StudentAssignmentRepository
+from repository.submission_repo import SubmissionRepository
 
 # mvc (controller/service)
 
 class AssignmentService(BaseService):
-    '''Process business logic for assignments'''
+    '''Process business logic for assignments and student assignment discovery'''
 
-    def __init__(self, factory: Optional[AssignmentFactory] = None, repo: Optional[AssignmentRepository] = None):
+    def __init__(
+        self,
+        factory: Optional[AssignmentFactory] = None,
+        repo: Optional[AssignmentRepository] = None,
+        student_repo: Optional[StudentRepository] = None,
+        student_assign_repo: Optional[StudentAssignmentRepository] = None,
+        submission_repo: Optional[SubmissionRepository] = None
+    ):
         super().__init__(
             factory=factory or AssignmentFactory(),
             repo=repo or AssignmentRepository()
         )
+        self.student_repo = student_repo or StudentRepository()
+        self.student_assign_repo = student_assign_repo or StudentAssignmentRepository()
+        self.submission_repo = submission_repo or SubmissionRepository()
 
     def add(self, assignment: AssignmentModel) -> Dict[str, Any]:
         '''Adds an assignment to the database (FR-005)'''
@@ -24,6 +37,52 @@ class AssignmentService(BaseService):
     def get(self, assignment_id: int) -> Dict[str, Any]:
         '''Gets an assignment from the database (FR-008)'''
         return super().get(assignment_id, "Assignment")
+
+    def get_student_assignments(self, student_id: int) -> List[Dict[str, Any]]:
+        '''Finds all assignments for a student with live submission status (FR-008, FR-016)'''
+        # 1. Look up student profile to find enrolled classes
+        student = self.student_repo.get(student_id)
+        enrolled_class_ids = student.get("class_id", []) if student else []
+
+        # 2. Get assignments from enrolled classes
+        class_assignments = self.repo.get_by_class_ids(enrolled_class_ids)
+
+        # 3. Get assignments directly assigned to the student
+        direct_assignment_ids = self.student_assign_repo.get_assignments_for_student(student_id)
+        direct_assignments = self.repo.get_by_ids(direct_assignment_ids)
+
+        # 4. Merge and deduplicate assignments
+        all_assignments_map = {}
+        for a in class_assignments + direct_assignments:
+            all_assignments_map[a["_id"]] = a
+
+        # 5. Decorate with student's submission status
+        result = []
+        for aid, a in all_assignments_map.items():
+            sub = self.submission_repo.get_by_student_and_assignment(student_id, aid)
+
+            sub_status = "PENDING"
+            if sub:
+                sub_status = sub.get("status", "SUBMITTED")
+
+            item = {
+                "assignment_id": a["_id"],
+                "title": a.get("title", ""),
+                "description": a.get("description", ""),
+                "assignment_date": a.get("assignment_date"),
+                "deadline": a.get("deadline"),
+                "class_id": a.get("class_id", 0),
+                "assignment_status": a.get("status", "Active"),
+                "submission_status": sub_status,
+                "submission_id": sub.get("_id") if sub else None,
+                "submission_date": sub.get("submission_date") if sub else None,
+                "attachment_url": sub.get("attachment_url") if sub else None,
+                "grade": sub.get("grade") if sub else None,
+                "feedback": sub.get("feedback") if sub else None
+            }
+            result.append(item)
+
+        return result
 
     def update(self, assignment_id: int, updates: dict) -> Dict[str, Any]:
         '''Updates an assignment in the database'''

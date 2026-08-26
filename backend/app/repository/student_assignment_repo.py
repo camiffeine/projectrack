@@ -1,5 +1,6 @@
-'''Repository for the Student Assignment entity'''
+'''Repository for the Student Assignment entity (FR-006, FR-016)'''
 
+from typing import List
 from .base_repo import BaseRepository
 from database import get_db
 from models.student_assignment_model import StudentAssignmentModel
@@ -19,18 +20,22 @@ class StudentAssignmentRepository(BaseRepository):
         return super().add(assignment_dict)
 
     def get(self, assignment_id: int):
-        '''Gets an student assignment from the database'''
+        '''Gets a student assignment from the database'''
         return super().get(assignment_id)
 
+    def get_assignments_for_student(self, student_id: int) -> List[int]:
+        '''Finds all assignment IDs explicitly assigned to this student ID (FR-016)'''
+        cursor = self.collection.find({"student_id": student_id}, {"_id": 1})
+        return [doc["_id"] for doc in cursor]
+
     def update(self, assignment_id: int, updates: dict):
-        '''Updates an student assignment in the database'''
+        '''Updates a student assignment in the database'''
         return super().update(assignment_id, updates)
 
     def delete(self, assignment_id: int):
-        '''Deletes an student assignment from the database'''
+        '''Deletes a student assignment from the database'''
         return super().delete(assignment_id)
 
-    def get_all(self):
-        '''Gets all student assignments from the database; early development for
-        retrieval testing purposes'''
-        return super().get_all()
+    def get_all(self, skip: int = 0, limit: int = 100):
+        '''Gets all student assignments with pagination'''
+        return super().get_all(skip=skip, limit=limit)
