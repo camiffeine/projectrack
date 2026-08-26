@@ -1,5 +1,7 @@
-'''User service class that processes the business logic data for the user model'''
+'''User service class with constructor dependency injection and domain exceptions (NFR-009)'''
 
+from typing import Optional, Dict, Any, List
+from pydantic import SecretStr
 from auth.security import hash_password
 from .base_service import BaseService
 from factories.user_factory import UserFactory
@@ -7,36 +9,36 @@ from models.user_model import UserModel
 from repository.user_repo import UserRepository
 from repository.role_repo import RoleRepository
 from schemas.user_schemas import UserCreate
-from pydantic import SecretStr
+from exceptions import EntityNotFoundException, EntityAlreadyExistsException, BadRequestException
 
 # mvc (controller/service)
 
 class UserService(BaseService):
-    '''Process the business logic data for the user model'''
+    '''Process business logic for user management, registration, and role assignment'''
 
-    def __init__(self):
-        '''Initializes user's service'''
-        self.factory = UserFactory()
-        self.repo = UserRepository()
-        self.role_repo = RoleRepository()
+    def __init__(
+        self,
+        factory: Optional[UserFactory] = None,
+        repo: Optional[UserRepository] = None,
+        role_repo: Optional[RoleRepository] = None
+    ):
+        factory_instance = factory or UserFactory()
+        repo_instance = repo or UserRepository()
+        super().__init__(factory=factory_instance, repo=repo_instance)
+        self.role_repo = role_repo or RoleRepository()
 
-    def register(self, user_data: UserCreate):
+    def register(self, user_data: UserCreate) -> Dict[str, Any]:
         '''Registers a new user with unassigned role (role_id=0) and hashed password (FR-001)'''
-        # Check if ID already exists
-        existing_id = self.repo.get(user_data.user_id)
-        if existing_id:
-            return {"error": f"User ID {user_data.user_id} is already taken."}
+        if self.repo.exists(user_data.user_id):
+            raise EntityAlreadyExistsException("User", user_data.user_id)
 
-        # Check if Email already exists
         existing_email = self.repo.get_by_email(user_data.email)
         if existing_email:
-            return {"error": f"Email '{user_data.email}' is already registered."}
+            raise BadRequestException(f"Email '{user_data.email}' is already registered.")
 
-        # Convert password to hash
         plain_password = user_data.password.get_secret_value() if isinstance(user_data.password, SecretStr) else str(user_data.password)
         hashed = hash_password(plain_password)
 
-        # Build domain model with unassigned role (0)
         user_model = UserModel(
             user_id=user_data.user_id,
             first_name=user_data.first_name,
@@ -54,44 +56,44 @@ class UserService(BaseService):
             created_user = self.repo.get(user_data.user_id)
             return created_user
         except Exception as e:
-            return {"error": f"Failed to register user: {e}"}
+            raise BadRequestException(f"Failed to register user: {str(e)}")
 
-    def assign_role(self, user_id: int, role_id: int):
+    def assign_role(self, user_id: int, role_id: int) -> Dict[str, Any]:
         '''Assigns a role to a user, validated by admin (FR-003)'''
-        user = self.repo.get(user_id)
-        if not user:
-            return {"error": f"User with ID {user_id} not found."}
+        if not self.repo.exists(user_id):
+            raise EntityNotFoundException("User", user_id)
 
-        # Check role validity if role_id > 0
         if role_id != 0:
-            role = self.role_repo.get(role_id)
-            if not role:
-                return {"error": f"Role ID {role_id} does not exist."}
+            if not self.role_repo.exists(role_id):
+                raise EntityNotFoundException("Role", role_id)
 
         try:
             self.repo.update_role(user_id, role_id)
-            return {"msg": f"Role {role_id} assigned successfully to user {user_id}.", "user_id": user_id, "role_id": role_id}
+            return {
+                "msg": f"Role {role_id} assigned successfully to user {user_id}.",
+                "user_id": user_id,
+                "role_id": role_id
+            }
         except Exception as e:
-            return {"error": f"Failed to assign role: {e}"}
+            raise BadRequestException(f"Failed to assign role: {str(e)}")
 
-    def add(self, user: UserModel):
+    def add(self, user: UserModel) -> Dict[str, Any]:
         '''Adds a user to the database (admin flow)'''
         existing_email = self.repo.get_by_email(user.email)
         if existing_email and existing_email.get("_id") != user.user_id:
-            return {"error": f"Email '{user.email}' is already in use by another user."}
+            raise BadRequestException(f"Email '{user.email}' is already in use by another user.")
 
         raw_pwd = user.password.get_secret_value() if isinstance(user.password, SecretStr) else str(user.password)
-        # Only hash if it doesn't already appear to be a bcrypt hash ($2b$...)
         if not raw_pwd.startswith("$2b$") and not raw_pwd.startswith("$2a$"):
             user.password = SecretStr(hash_password(raw_pwd))
 
         return super().add(user, "User")
 
-    def get(self, user_id: int):
+    def get(self, user_id: int) -> Dict[str, Any]:
         '''Gets a user from the database'''
         return super().get(user_id, "User")
 
-    def update(self, user_id: int, updates: dict):
+    def update(self, user_id: int, updates: dict) -> Dict[str, Any]:
         '''Updates a user in the database with secure password hashing'''
         if 'password' in updates and updates['password']:
             pwd_val = updates['password'].get_secret_value() if isinstance(updates['password'], SecretStr) else str(updates['password'])
@@ -99,10 +101,10 @@ class UserService(BaseService):
                 updates['password'] = hash_password(pwd_val)
         return super().update(user_id, updates, "User")
 
-    def delete(self, user_id: int):
+    def delete(self, user_id: int) -> Dict[str, Any]:
         '''Deletes a user from the database'''
         return super().delete(user_id, "User")
 
-    def get_all(self):
+    def get_all(self, skip: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
         '''Gets all users from the database'''
-        return super().get_all()
+        return super().get_all(skip=skip, limit=limit)

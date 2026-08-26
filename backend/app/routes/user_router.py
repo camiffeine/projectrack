@@ -1,52 +1,62 @@
-'''User router for handling endpoints'''
+'''User router with native FastAPI dependency injection (FR-001, FR-003, NFR-009)'''
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, status
 from typing import List
 
-from .base_router import BaseRouter
 from auth.auth_bearer import verify_auth, RoleRequired
 from models.user_model import UserModel
 from services.user_service import UserService
 from schemas.user_schemas import UserResponse, RoleAssignment
+from dependencies import get_user_service, PaginationParams
 
-# mvc (view/api)
+router = APIRouter(tags=["Users"])
 
-router = APIRouter()
-base_router = BaseRouter()
-user_service = UserService()
-base_router.service = user_service  # Dependency injection
-
-# User CRUD endpoints
-
-@router.post("/users/add/", tags=["Users"], status_code=201, dependencies=[Depends(RoleRequired(3))])
-async def add_user(user: UserModel):
+@router.post("/users/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(3))])
+async def add_user(
+    user: UserModel,
+    service: UserService = Depends(get_user_service)
+):
     '''Add a user to the database (Admin only)'''
-    return await base_router.add(user)
+    return service.add(user)
 
-@router.get("/users/get/{user_id}", tags=["Users"], response_model=UserResponse, dependencies=[Depends(verify_auth)])
-async def get_user(user_id: int):
+@router.get("/users/get/{user_id}", response_model=UserResponse, dependencies=[Depends(verify_auth)])
+async def get_user(
+    user_id: int,
+    service: UserService = Depends(get_user_service)
+):
     '''Get a user from the database without sensitive credentials'''
-    return await base_router.get(user_id)
+    return service.get(user_id)
 
-@router.put("/users/update/{user_id}", tags=["Users"], dependencies=[Depends(verify_auth)])
-async def update_user(user_id: int, updates: dict):
+@router.put("/users/update/{user_id}", dependencies=[Depends(verify_auth)])
+async def update_user(
+    user_id: int,
+    updates: dict,
+    service: UserService = Depends(get_user_service)
+):
     '''Update a user in the database'''
-    return await base_router.update(user_id, updates)
+    return service.update(user_id, updates)
 
-@router.put("/users/{user_id}/role", tags=["Users"], dependencies=[Depends(RoleRequired(3))])
-async def assign_user_role(user_id: int, role_data: RoleAssignment):
+@router.put("/users/{user_id}/role", dependencies=[Depends(RoleRequired(3))])
+async def assign_user_role(
+    user_id: int,
+    role_data: RoleAssignment,
+    service: UserService = Depends(get_user_service)
+):
     '''Assign Student (1) or Professor (2) role to a user (Admin only - FR-003)'''
-    result = user_service.assign_role(user_id, role_data.role_id)
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
+    return service.assign_role(user_id, role_data.role_id)
 
-@router.delete("/users/delete/{user_id}", tags=["Users"], dependencies=[Depends(RoleRequired(3))])
-async def delete_user(user_id: int):
+@router.delete("/users/delete/{user_id}", dependencies=[Depends(RoleRequired(3))])
+async def delete_user(
+    user_id: int,
+    service: UserService = Depends(get_user_service)
+):
     '''Delete a user from the database (Admin only)'''
-    return await base_router.delete(user_id)
+    return service.delete(user_id)
 
-@router.get("/users/get/", tags=["Users"], response_model=List[UserResponse], dependencies=[Depends(RoleRequired(3))])
-async def get_users():
-    '''Get all the users from the database (Admin only)'''
-    return await base_router.get_all()
+@router.get("/users/get/", response_model=List[UserResponse], dependencies=[Depends(RoleRequired(3))])
+async def get_users(
+    pagination: PaginationParams = Depends(),
+    service: UserService = Depends(get_user_service)
+):
+    '''Get all users from the database with pagination (Admin only - NFR-006)'''
+    return service.get_all(skip=pagination.skip, limit=pagination.limit)

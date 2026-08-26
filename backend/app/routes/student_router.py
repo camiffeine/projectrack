@@ -1,41 +1,52 @@
-'''Student router for handling endpoints'''
+'''Student router with native FastAPI dependency injection (NFR-009)'''
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, status
+from typing import List, Dict, Any
 
-from .base_router import BaseRouter
 from auth.auth_bearer import verify_auth, RoleRequired
 from models.student_model import StudentModel
 from services.student_service import StudentService
+from dependencies import get_student_service, PaginationParams
 
-# mvc (view/api)
+router = APIRouter(tags=["Students"])
 
-router = APIRouter()
-base_router = BaseRouter()
-base_router.service = StudentService()  # Dependency injection
-
-# Student CRUD endpoints
-
-@router.post("/students/add/", tags=["Students, Users"], status_code=201, dependencies=[Depends(RoleRequired(3))])
-async def add_student(student_data: StudentModel):
+@router.post("/students/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(3))])
+async def add_student(
+    student_data: StudentModel,
+    service: StudentService = Depends(get_student_service)
+):
     '''Add a student to the database (Admin only)'''
-    return await base_router.add(student_data)
+    return service.add(student_data)
 
-@router.get("/students/get/{student_id}", tags=["Students, Users"], dependencies=[Depends(verify_auth)])
-async def get_student(student_id: int):
+@router.get("/students/get/{student_id}", dependencies=[Depends(verify_auth)])
+async def get_student(
+    student_id: int,
+    service: StudentService = Depends(get_student_service)
+):
     '''Get a student from the database'''
-    return await base_router.get(student_id)
+    return service.get(student_id)
 
-@router.put("/students/update/{student_id}", tags=["Students, Users"], dependencies=[Depends(RoleRequired(3))])
-async def update_student(student_id: int, updates: dict):
+@router.put("/students/update/{student_id}", dependencies=[Depends(RoleRequired(3))])
+async def update_student(
+    student_id: int,
+    updates: dict,
+    service: StudentService = Depends(get_student_service)
+):
     '''Update a student in the database (Admin only)'''
-    return await base_router.update(student_id, updates)
+    return service.update(student_id, updates)
 
-@router.delete("/students/delete/{student_id}", tags=["Students, Users"], dependencies=[Depends(RoleRequired(3))])
-async def delete_student(student_id: int):
+@router.delete("/students/delete/{student_id}", dependencies=[Depends(RoleRequired(3))])
+async def delete_student(
+    student_id: int,
+    service: StudentService = Depends(get_student_service)
+):
     '''Delete a student from the database (Admin only)'''
-    return await base_router.delete(student_id)
+    return service.delete(student_id)
 
-@router.get("/students/get/", tags=["Students, Users"], dependencies=[Depends(verify_auth)])
-async def get_students():
-    '''Get all the students from the database'''
-    return await base_router.get_all()
+@router.get("/students/get/", dependencies=[Depends(verify_auth)])
+async def get_students(
+    pagination: PaginationParams = Depends(),
+    service: StudentService = Depends(get_student_service)
+):
+    '''Get all students from the database with pagination (NFR-006)'''
+    return service.get_all(skip=pagination.skip, limit=pagination.limit)

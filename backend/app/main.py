@@ -1,12 +1,14 @@
-'''Main module for the FastAPI application with lifespan management and connection pooling (NFR-005, NFR-006, NFR-009)'''
+'''Main module for the FastAPI application with lifespan management, DI, and centralized error handling (NFR-005, NFR-006, NFR-009)'''
 
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from config import settings
 from database import Database
 from repository.indexes import init_db_indexes
+from exceptions import AppException
 from routes import (
     health_router,
     auth,
@@ -50,6 +52,15 @@ app = FastAPI(
     description="ProjecTrack Backend API for academic project tracking and assignment submissions.",
     lifespan=lifespan
 )
+
+# Centralized application exception handler
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    '''Formats all domain exceptions into standardized JSON responses'''
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 # Basic hello world test
 @app.get("/greeting/", tags=["Greeting"])

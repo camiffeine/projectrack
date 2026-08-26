@@ -1,41 +1,52 @@
-'''Class router for handling endpoints'''
+'''Class router with native FastAPI dependency injection (FR-004, NFR-009)'''
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends, status
+from typing import List, Dict, Any
 
-from .base_router import BaseRouter
 from auth.auth_bearer import verify_auth, RoleRequired
 from models.class_model import ClassModel
 from services.class_service import ClassService
+from dependencies import get_class_service, PaginationParams
 
-# mvc (view/api)
+router = APIRouter(tags=["Classes"])
 
-router = APIRouter()
-base_router = BaseRouter()
-base_router.service = ClassService()  # Dependency injection
-
-# Class CRUD endpoints
-
-@router.post("/classes/add/", tags=["Classes"], status_code=201, dependencies=[Depends(RoleRequired(2, 3))])
-async def add_class(class_data: ClassModel):
+@router.post("/classes/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(2, 3))])
+async def add_class(
+    class_data: ClassModel,
+    service: ClassService = Depends(get_class_service)
+):
     '''Add a class to the database (Professors & Admins - FR-004)'''
-    return await base_router.add(class_data)
+    return service.add(class_data)
 
-@router.get("/classes/get/{class_id}", tags=["Classes"], dependencies=[Depends(verify_auth)])
-async def get_class(class_id: int):
+@router.get("/classes/get/{class_id}", dependencies=[Depends(verify_auth)])
+async def get_class(
+    class_id: int,
+    service: ClassService = Depends(get_class_service)
+):
     '''Get a class from the database'''
-    return await base_router.get(class_id)
+    return service.get(class_id)
 
-@router.put("/classes/update/{class_id}", tags=["Classes"], dependencies=[Depends(RoleRequired(2, 3))])
-async def update_class(class_id: int, updates: dict):
+@router.put("/classes/update/{class_id}", dependencies=[Depends(RoleRequired(2, 3))])
+async def update_class(
+    class_id: int,
+    updates: dict,
+    service: ClassService = Depends(get_class_service)
+):
     '''Update a class in the database (Professors & Admins)'''
-    return await base_router.update(class_id, updates)
+    return service.update(class_id, updates)
 
-@router.delete("/classes/delete/{class_id}", tags=["Classes"], dependencies=[Depends(RoleRequired(2, 3))])
-async def delete_class(class_id: int):
+@router.delete("/classes/delete/{class_id}", dependencies=[Depends(RoleRequired(2, 3))])
+async def delete_class(
+    class_id: int,
+    service: ClassService = Depends(get_class_service)
+):
     '''Delete a class from the database (Professors & Admins)'''
-    return await base_router.delete(class_id)
+    return service.delete(class_id)
 
-@router.get("/classes/get/", tags=["Classes"], dependencies=[Depends(verify_auth)])
-async def get_classes():
-    '''Get all the classes from the database'''
-    return await base_router.get_all()
+@router.get("/classes/get/", dependencies=[Depends(verify_auth)])
+async def get_classes(
+    pagination: PaginationParams = Depends(),
+    service: ClassService = Depends(get_class_service)
+):
+    '''Get all classes from the database with pagination (NFR-006)'''
+    return service.get_all(skip=pagination.skip, limit=pagination.limit)
