@@ -3,15 +3,17 @@
 from fastapi import APIRouter, Depends, status
 from typing import List
 
-from auth.auth_bearer import verify_auth, RoleRequired
+from auth.auth_bearer import verify_auth, RoleRequired, get_current_user
+from auth.ownership import verify_user_access, verify_user_update_access
 from models.user_model import UserModel
 from services.user_service import UserService
-from schemas.user_schemas import UserResponse, RoleAssignment
+from schemas.user_schemas import UserResponse, UserUpdate, RoleAssignment
+from schemas.common_schemas import MutationResponse
 from dependencies import get_user_service, PaginationParams
 
 router = APIRouter(tags=["Users"])
 
-@router.post("/users/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(3))])
+@router.post("/users/add/", response_model=MutationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(3))])
 async def add_user(
     user: UserModel,
     service: UserService = Depends(get_user_service)
@@ -22,19 +24,23 @@ async def add_user(
 @router.get("/users/get/{user_id}", response_model=UserResponse, dependencies=[Depends(verify_auth)])
 async def get_user(
     user_id: int,
+    current_user: dict = Depends(get_current_user),
     service: UserService = Depends(get_user_service)
 ):
     '''Get a user from the database without sensitive credentials'''
+    verify_user_access(user_id, current_user)
     return service.get(user_id)
 
-@router.put("/users/update/{user_id}", dependencies=[Depends(verify_auth)])
+@router.put("/users/update/{user_id}", response_model=MutationResponse, dependencies=[Depends(verify_auth)])
 async def update_user(
     user_id: int,
-    updates: dict,
+    updates: UserUpdate,
+    current_user: dict = Depends(get_current_user),
     service: UserService = Depends(get_user_service)
 ):
     '''Update a user in the database'''
-    return service.update(user_id, updates)
+    verify_user_update_access(user_id, current_user)
+    return service.update(user_id, updates.model_dump(exclude_unset=True))
 
 @router.put("/users/{user_id}/role", dependencies=[Depends(RoleRequired(3))])
 async def assign_user_role(
@@ -45,7 +51,7 @@ async def assign_user_role(
     '''Assign Student (1) or Professor (2) role to a user (Admin only - FR-003)'''
     return service.assign_role(user_id, role_data.role_id)
 
-@router.delete("/users/delete/{user_id}", dependencies=[Depends(RoleRequired(3))])
+@router.delete("/users/delete/{user_id}", response_model=MutationResponse, dependencies=[Depends(RoleRequired(3))])
 async def delete_user(
     user_id: int,
     service: UserService = Depends(get_user_service)

@@ -3,18 +3,25 @@
 from fastapi import APIRouter, Depends, status
 from typing import List, Dict, Any
 
-from auth.auth_bearer import verify_auth, RoleRequired
+from auth.auth_bearer import verify_auth, RoleRequired, get_current_user
+from auth.ownership import verify_assignment_ownership, verify_student_access
 from models.assignment_model import AssignmentModel
 from services.assignment_service import AssignmentService
 from services.submission_service import SubmissionService
-from schemas.assignment_schemas import StudentAssignmentDetailResponse, AssignmentResponse, MaterialAttachmentRequest
+from schemas.assignment_schemas import (
+    StudentAssignmentDetailResponse,
+    AssignmentResponse,
+    AssignmentUpdate,
+    MaterialAttachmentRequest
+)
 from schemas.submission_schemas import SubmissionResponse
+from schemas.common_schemas import MutationResponse
 from dependencies import get_assignment_service, get_submission_service, PaginationParams
 from fastapi import Query
 
 router = APIRouter(tags=["Assignments"])
 
-@router.post("/assignments/add/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(2, 3))])
+@router.post("/assignments/add/", response_model=MutationResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleRequired(2, 3))])
 async def add_assignment(
     assignment: AssignmentModel,
     service: AssignmentService = Depends(get_assignment_service)
@@ -22,7 +29,7 @@ async def add_assignment(
     '''Add an assignment to the database (Professors & Admins - FR-005, FR-013)'''
     return service.add(assignment)
 
-@router.get("/assignments/get/{assignment_id}", dependencies=[Depends(verify_auth)])
+@router.get("/assignments/get/{assignment_id}", response_model=AssignmentResponse, dependencies=[Depends(verify_auth)])
 async def get_assignment(
     assignment_id: int,
     service: AssignmentService = Depends(get_assignment_service)
@@ -38,9 +45,11 @@ async def get_assignment(
 async def add_assignment_materials(
     assignment_id: int,
     material_data: MaterialAttachmentRequest,
+    current_user: dict = Depends(get_current_user),
     service: AssignmentService = Depends(get_assignment_service)
 ):
     '''Attach materials, guides, or reference links to an assignment (Professors & Admins - FR-013)'''
+    verify_assignment_ownership(assignment_id, current_user)
     return service.add_materials(assignment_id, material_data.materials)
 
 @router.delete(
@@ -51,9 +60,11 @@ async def add_assignment_materials(
 async def remove_assignment_material(
     assignment_id: int,
     material_url: str = Query(..., description="URL of the material to remove"),
+    current_user: dict = Depends(get_current_user),
     service: AssignmentService = Depends(get_assignment_service)
 ):
     '''Remove a material URL from an assignment (Professors & Admins - FR-013)'''
+    verify_assignment_ownership(assignment_id, current_user)
     return service.remove_material(assignment_id, material_url)
 
 @router.get(
@@ -70,9 +81,11 @@ async def remove_assignment_material(
 )
 async def get_student_assignments(
     student_id: int,
+    current_user: dict = Depends(get_current_user),
     service: AssignmentService = Depends(get_assignment_service)
 ):
     '''Get all assigned projects for a student decorated with live submission and grading status (FR-008, FR-016)'''
+    verify_student_access(student_id, current_user)
     return service.get_student_assignments(student_id)
 
 @router.get(
@@ -93,24 +106,28 @@ async def get_assignment_submissions(
         limit=pagination.limit
     )
 
-@router.put("/assignments/update/{assignment_id}", dependencies=[Depends(RoleRequired(2, 3))])
+@router.put("/assignments/update/{assignment_id}", response_model=MutationResponse, dependencies=[Depends(RoleRequired(2, 3))])
 async def update_assignment(
     assignment_id: int,
-    updates: dict,
+    updates: AssignmentUpdate,
+    current_user: dict = Depends(get_current_user),
     service: AssignmentService = Depends(get_assignment_service)
 ):
     '''Update an assignment in the database (Professors & Admins)'''
-    return service.update(assignment_id, updates)
+    verify_assignment_ownership(assignment_id, current_user)
+    return service.update(assignment_id, updates.model_dump(exclude_unset=True))
 
-@router.delete("/assignments/delete/{assignment_id}", dependencies=[Depends(RoleRequired(2, 3))])
+@router.delete("/assignments/delete/{assignment_id}", response_model=MutationResponse, dependencies=[Depends(RoleRequired(2, 3))])
 async def delete_assignment(
     assignment_id: int,
+    current_user: dict = Depends(get_current_user),
     service: AssignmentService = Depends(get_assignment_service)
 ):
     '''Delete an assignment from the database (Professors & Admins)'''
+    verify_assignment_ownership(assignment_id, current_user)
     return service.delete(assignment_id)
 
-@router.get("/assignments/get/", dependencies=[Depends(verify_auth)])
+@router.get("/assignments/get/", response_model=List[AssignmentResponse], dependencies=[Depends(verify_auth)])
 async def get_assignments(
     pagination: PaginationParams = Depends(),
     service: AssignmentService = Depends(get_assignment_service)

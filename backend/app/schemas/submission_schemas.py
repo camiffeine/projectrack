@@ -13,6 +13,12 @@ class SubmissionCreate(BaseModel):
     attachment_url: Optional[str] = Field(None, max_length=500, description="URL or link to project work")
     delivery_type: str = Field(default="FINAL", description="FINAL or PROGRESS")
 
+class SubmissionUpdate(BaseModel):
+    '''Schema for updating a submission (student deliverable)'''
+    comment: Optional[str] = Field(None, max_length=500, description="Student submission comment")
+    attachment_url: Optional[str] = Field(None, max_length=500, description="URL or link to project work")
+    delivery_type: Optional[str] = Field(None, description="FINAL or PROGRESS")
+
 class SubmissionFeedbackRequest(BaseModel):
     '''Schema for professor providing feedback and grade on a submission (FR-011)'''
     feedback: str = Field(..., min_length=1, max_length=1000, description="Professor review or feedback")

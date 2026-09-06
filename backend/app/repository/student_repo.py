@@ -53,3 +53,7 @@ class StudentRepository(BaseRepository):
         '''Gets all students enrolled in a class with pagination (FR-004)'''
         cursor = self.find_many({"class_id": class_id}, skip=skip, limit=limit)
         return list(cursor)
+
+    def get_by_user_id(self, user_id: int):
+        '''Gets a student profile by user ID'''
+        return self.collection.find_one({"user_id": user_id})

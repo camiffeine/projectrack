@@ -3,10 +3,17 @@
 from fastapi import APIRouter, Depends, status
 from typing import List, Dict, Any, Union
 
-from auth.auth_bearer import verify_auth, RoleRequired
+from auth.auth_bearer import verify_auth, RoleRequired, get_current_user
+from auth.ownership import verify_student_access, verify_submission_access
 from models.submission_model import SubmissionModel
 from services.submission_service import SubmissionService
-from schemas.submission_schemas import SubmissionCreate, SubmissionFeedbackRequest, SubmissionResponse
+from schemas.submission_schemas import (
+    SubmissionCreate,
+    SubmissionUpdate,
+    SubmissionFeedbackRequest,
+    SubmissionResponse
+)
+from schemas.common_schemas import MutationResponse
 from dependencies import get_submission_service, PaginationParams
 
 router = APIRouter(tags=["Submissions"])
@@ -27,9 +34,11 @@ router = APIRouter(tags=["Submissions"])
 )
 async def submit_assignment(
     submission: SubmissionCreate,
+    current_user: dict = Depends(get_current_user),
     service: SubmissionService = Depends(get_submission_service)
 ):
     '''Submit a final or progress deliverable for an assigned project (FR-010, FR-012)'''
+    verify_student_access(submission.student_id, current_user)
     return service.submit_assignment(submission)
 
 @router.put(
@@ -57,9 +66,11 @@ async def provide_feedback(
 )
 async def get_submission(
     submission_id: int,
+    current_user: dict = Depends(get_current_user),
     service: SubmissionService = Depends(get_submission_service)
 ):
     '''Get a submission by ID from the database'''
+    verify_submission_access(submission_id, current_user)
     return service.get(submission_id)
 
 @router.get(
@@ -71,25 +82,29 @@ async def get_submission(
 async def get_student_submissions(
     student_id: int,
     pagination: PaginationParams = Depends(),
+    current_user: dict = Depends(get_current_user),
     service: SubmissionService = Depends(get_submission_service)
 ):
     '''Get all submissions made by a student with pagination'''
+    verify_student_access(student_id, current_user)
     return service.get_submissions_by_student(
         student_id=student_id,
         skip=pagination.skip,
         limit=pagination.limit
     )
 
-@router.put("/submissions/update/{submission_id}", dependencies=[Depends(RoleRequired(1, 2, 3))])
+@router.put("/submissions/update/{submission_id}", response_model=MutationResponse, dependencies=[Depends(RoleRequired(1, 2, 3))])
 async def update_submission(
     submission_id: int,
-    updates: dict,
+    updates: SubmissionUpdate,
+    current_user: dict = Depends(get_current_user),
     service: SubmissionService = Depends(get_submission_service)
 ):
     '''Update a submission in the database'''
-    return service.update(submission_id, updates)
+    verify_submission_access(submission_id, current_user)
+    return service.update(submission_id, updates.model_dump(exclude_unset=True))
 
-@router.delete("/submissions/delete/{submission_id}", dependencies=[Depends(RoleRequired(3))])
+@router.delete("/submissions/delete/{submission_id}", response_model=MutationResponse, dependencies=[Depends(RoleRequired(3))])
 async def delete_submission(
     submission_id: int,
     service: SubmissionService = Depends(get_submission_service)
@@ -97,7 +112,7 @@ async def delete_submission(
     '''Delete a submission from the database (Admin only)'''
     return service.delete(submission_id)
 
-@router.get("/submissions/get/", dependencies=[Depends(RoleRequired(2, 3))])
+@router.get("/submissions/get/", response_model=List[SubmissionResponse], dependencies=[Depends(RoleRequired(2, 3))])
 async def get_submissions(
     pagination: PaginationParams = Depends(),
     service: SubmissionService = Depends(get_submission_service)

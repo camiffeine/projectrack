@@ -29,3 +29,7 @@ class ProfessorRepository(BaseRepository):
     def delete(self, professor_id: int):
         '''Deletes a professor from the database'''
         return super().delete(professor_id)
+
+    def get_by_user_id(self, user_id: int):
+        '''Gets a professor profile by user ID'''
+        return self.collection.find_one({"user_id": user_id})

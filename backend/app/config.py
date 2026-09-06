@@ -28,6 +28,18 @@ class Settings(BaseModel):
     ALGORITHM: str = Field(default_factory=lambda: os.getenv("ALGORITHM", "HS256"))
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default_factory=lambda: int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")))
 
+    # CORS Configuration (NFR-001)
+    ALLOWED_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            origin.strip()
+            for origin in os.getenv(
+                "ALLOWED_ORIGINS",
+                "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+            ).split(",")
+            if origin.strip()
+        ]
+    )
+
 @lru_cache()
 def get_settings() -> Settings:
     '''Returns cached application settings instance'''

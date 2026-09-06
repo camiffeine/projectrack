@@ -1,6 +1,6 @@
 '''Class schemas for request/response DTOs and enrollment (FR-004)'''
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 class ClassCreate(BaseModel):
@@ -12,6 +12,11 @@ class ClassCreate(BaseModel):
 class ClassEnrollmentRequest(BaseModel):
     '''Schema for adding or removing a student from a class (FR-004)'''
     student_id: int = Field(..., gt=0, description="Student ID to enroll or unenroll")
+
+class ClassUpdate(BaseModel):
+    '''Schema for updating class details'''
+    class_name: Optional[str] = Field(None, min_length=3, max_length=50, description="Class name")
+    professor_id: Optional[int] = Field(None, gt=0, description="Professor ID who leads the class")
 
 class ClassResponse(BaseModel):
     '''Schema for returning class details'''
