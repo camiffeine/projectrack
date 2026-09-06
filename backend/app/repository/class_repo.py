@@ -29,3 +29,8 @@ class ClassRepository(BaseRepository):
     def delete(self, class_id: int):
         '''Deletes a class from the database'''
         return super().delete(class_id)
+
+    def get_by_professor(self, professor_id: int, skip: int = 0, limit: int = 100):
+        '''Gets all classes taught by a professor with pagination (FR-004)'''
+        cursor = self.find_many({"professor_id": professor_id}, skip=skip, limit=limit)
+        return list(cursor)

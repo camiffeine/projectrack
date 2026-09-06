@@ -2,8 +2,19 @@
 
 from .user_schemas import UserCreate, UserResponse, UserUpdate, RoleAssignment
 from .auth_schemas import LoginRequest, TokenResponse
-from .assignment_schemas import AssignmentCreate, AssignmentResponse, StudentAssignmentDetailResponse
+from .assignment_schemas import (
+    AssignmentCreate,
+    AssignmentResponse,
+    StudentAssignmentDetailResponse,
+    MaterialAttachmentRequest
+)
 from .submission_schemas import SubmissionCreate, SubmissionFeedbackRequest, SubmissionResponse
+from .class_schemas import (
+    ClassCreate,
+    ClassEnrollmentRequest,
+    ClassResponse,
+    ClassStudentResponse
+)
 
 __all__ = [
     'UserCreate',
@@ -15,7 +26,12 @@ __all__ = [
     'AssignmentCreate',
     'AssignmentResponse',
     'StudentAssignmentDetailResponse',
+    'MaterialAttachmentRequest',
     'SubmissionCreate',
     'SubmissionFeedbackRequest',
-    'SubmissionResponse'
+    'SubmissionResponse',
+    'ClassCreate',
+    'ClassEnrollmentRequest',
+    'ClassResponse',
+    'ClassStudentResponse'
 ]

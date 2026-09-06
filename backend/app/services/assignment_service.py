@@ -9,10 +9,12 @@ from repository.student_repo import StudentRepository
 from repository.student_assignment_repo import StudentAssignmentRepository
 from repository.submission_repo import SubmissionRepository
 
+from exceptions import EntityNotFoundException
+
 # mvc (controller/service)
 
 class AssignmentService(BaseService):
-    '''Process business logic for assignments and student assignment discovery'''
+    '''Process business logic for assignments, materials, and student assignment discovery'''
 
     def __init__(
         self,
@@ -39,7 +41,7 @@ class AssignmentService(BaseService):
         return super().get(assignment_id, "Assignment")
 
     def get_student_assignments(self, student_id: int) -> List[Dict[str, Any]]:
-        '''Finds all assignments for a student with live submission status (FR-008, FR-016)'''
+        '''Finds all assignments for a student with live submission status and materials (FR-008, FR-013, FR-016)'''
         # 1. Look up student profile to find enrolled classes
         student = self.student_repo.get(student_id)
         enrolled_class_ids = student.get("class_id", []) if student else []
@@ -73,6 +75,7 @@ class AssignmentService(BaseService):
                 "deadline": a.get("deadline"),
                 "class_id": a.get("class_id", 0),
                 "assignment_status": a.get("status", "Active"),
+                "materials": a.get("materials", []),
                 "submission_status": sub_status,
                 "submission_id": sub.get("_id") if sub else None,
                 "submission_date": sub.get("submission_date") if sub else None,
@@ -83,6 +86,30 @@ class AssignmentService(BaseService):
             result.append(item)
 
         return result
+
+    def add_materials(self, assignment_id: int, materials: List[str]) -> Dict[str, Any]:
+        '''Adds materials/guides to an assignment (FR-013)'''
+        if not self.repo.exists(assignment_id):
+            raise EntityNotFoundException("Assignment", assignment_id)
+
+        self.repo.add_materials(assignment_id, materials)
+        return {
+            "message": f"Materials added to assignment {assignment_id} successfully.",
+            "assignment_id": assignment_id,
+            "materials": materials
+        }
+
+    def remove_material(self, assignment_id: int, material_url: str) -> Dict[str, Any]:
+        '''Removes a material/guide from an assignment (FR-013)'''
+        if not self.repo.exists(assignment_id):
+            raise EntityNotFoundException("Assignment", assignment_id)
+
+        self.repo.remove_material(assignment_id, material_url)
+        return {
+            "message": f"Material removed from assignment {assignment_id} successfully.",
+            "assignment_id": assignment_id,
+            "material_url": material_url
+        }
 
     def update(self, assignment_id: int, updates: dict) -> Dict[str, Any]:
         '''Updates an assignment in the database'''

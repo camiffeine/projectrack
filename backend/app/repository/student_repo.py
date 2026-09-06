@@ -30,7 +30,26 @@ class StudentRepository(BaseRepository):
         '''Deletes a student from the database'''
         return super().delete(student_id)
 
-    def get_all(self):
-        '''Gets all students from the database; early development for
-        retrieval testing purposes'''
-        return super().get_all()
+    def get_all(self, skip: int = 0, limit: int = 100):
+        '''Gets all students from the database with pagination'''
+        cursor = super().get_all(skip=skip, limit=limit)
+        return list(cursor)
+
+    def enroll_in_class(self, student_id: int, class_id: int):
+        '''Enrolls a student in a class using $addToSet (FR-004)'''
+        return self.collection.update_one(
+            {"_id": student_id},
+            {"$addToSet": {"class_id": class_id}}
+        )
+
+    def unenroll_from_class(self, student_id: int, class_id: int):
+        '''Unenrolls a student from a class using $pull (FR-004)'''
+        return self.collection.update_one(
+            {"_id": student_id},
+            {"$pull": {"class_id": class_id}}
+        )
+
+    def get_students_by_class(self, class_id: int, skip: int = 0, limit: int = 100):
+        '''Gets all students enrolled in a class with pagination (FR-004)'''
+        cursor = self.find_many({"class_id": class_id}, skip=skip, limit=limit)
+        return list(cursor)

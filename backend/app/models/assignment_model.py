@@ -1,6 +1,6 @@
 '''Assignment model module with Pydantic validations (FR-005)'''
 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import Field, model_validator
 from .base_entity_model import BaseEntityModel
@@ -8,7 +8,7 @@ from .base_entity_model import BaseEntityModel
 # mvc (model)
 
 class AssignmentModel(BaseEntityModel):
-    '''Assignment domain model with validations'''
+    '''Assignment domain model with validations (FR-005, FR-013)'''
     assignment_id: int = Field(
         ..., gt=0, description="Must be a positive integer."
     )
@@ -35,6 +35,10 @@ class AssignmentModel(BaseEntityModel):
 
     status: str = Field(
         default="Active", description="Status: Active, Closed, Archived"
+    )
+
+    materials: List[str] = Field(
+        default=[], description="List of URLs or reference material links uploaded by the professor."
     )
 
     # Pydantic model validator

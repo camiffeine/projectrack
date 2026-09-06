@@ -46,3 +46,17 @@ class AssignmentRepository(BaseRepository):
     def get_all(self, skip: int = 0, limit: int = 100):
         '''Gets all assignments from the database with pagination'''
         return super().get_all(skip=skip, limit=limit)
+
+    def add_materials(self, assignment_id: int, materials: List[str]):
+        '''Adds material links to an assignment using $addToSet (FR-013)'''
+        return self.collection.update_one(
+            {"_id": assignment_id},
+            {"$addToSet": {"materials": {"$each": materials}}}
+        )
+
+    def remove_material(self, assignment_id: int, material_url: str):
+        '''Removes a material link from an assignment using $pull (FR-013)'''
+        return self.collection.update_one(
+            {"_id": assignment_id},
+            {"$pull": {"materials": material_url}}
+        )
